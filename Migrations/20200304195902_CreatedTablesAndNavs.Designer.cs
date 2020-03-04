@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CriticalHitProducts.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20200304191233_CreatedTablesAndNavs")]
+    [Migration("20200304195902_CreatedTablesAndNavs")]
     partial class CreatedTablesAndNavs
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,8 +40,8 @@ namespace CriticalHitProducts.Migrations
                     b.Property<int>("NumberInStock")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("OutOfStock")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<bool>("OutOfStock")
+                        .HasColumnType("boolean");
 
                     b.Property<double>("Price")
                         .HasColumnType("double precision");

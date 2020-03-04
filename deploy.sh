@@ -1,7 +1,7 @@
-docker build -t sdg-sample-api-template .
+docker build -t critical-hit-image .
 
-docker tag sdg-sample-api-template registry.heroku.com/sdg-sample-api-template/web
+docker tag critical-hit-image registry.heroku.com/critical-hit-products-image/web
 
-docker push registry.heroku.com/sdg-sample-api-template/web
+docker push registry.heroku.com/critical-hit-products-image/web
 
-heroku container:release web -a sdg-sample-api-template
+heroku container:release web -a critical-hit-image

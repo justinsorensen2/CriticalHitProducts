@@ -33,7 +33,7 @@ namespace CriticalHitProducts.Migrations
                     NumberInStock = table.Column<int>(nullable: false),
                     Description = table.Column<string>(nullable: true),
                     DateOrdered = table.Column<DateTime>(nullable: false),
-                    OutOfStock = table.Column<DateTime>(nullable: true),
+                    OutOfStock = table.Column<bool>(nullable: false),
                     TypeId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>

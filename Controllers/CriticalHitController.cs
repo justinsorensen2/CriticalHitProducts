@@ -13,7 +13,7 @@ namespace CriticalHitProducts.Controllers
   [ApiController]
   public class CriticalHitController : ControllerBase
   {
-    //create public db context
+    //create public db context accessible by entire class
     public DatabaseContext db { get; set; } = new DatabaseContext();
     //create get to view all prods
     [HttpGet]
@@ -61,8 +61,12 @@ namespace CriticalHitProducts.Controllers
     [HttpPost]
     public async Task<ActionResult<Product>> AddProduct(Product newProduct)
     {
+      var tracker = new ProductTracker();
       await db.Products.AddAsync(newProduct);
       await db.SaveChangesAsync();
+      var locationId = newProduct.LocationId;
+      //call method to update list of products
+      tracker.UpdateLocationProducts(locationId, newProduct);
       return Ok(newProduct);
     }
     //replace all properties of existing prod with new props
