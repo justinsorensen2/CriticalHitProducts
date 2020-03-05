@@ -15,39 +15,41 @@ namespace CriticalHitProducts.Controllers
   {
     //create public db context accessible by entire class
     public DatabaseContext db { get; set; } = new DatabaseContext();
-    //create get to view all prods
-    [HttpGet]
-    public async Task<ActionResult<List<Product>>> ViewAllProducts()
+    //create get to view all prods at a location
+    [HttpGet("location/{locationId}")]
+    public async Task<ActionResult<List<Product>>> ViewAllProducts(int locationId)
     {
-      var pList = await db.Products.OrderBy(p => p.Name).ToListAsync();
+      var location = await db.Locations.FirstOrDefaultAsync(l => l.Id == locationId);
+      var pList = location.Products;
       if (pList == null)
       {
         return NotFound();
       }
       else
       {
-        return pList;
+        return Ok(pList.ToList());
       }
     }
     //create get to view item by sku
     [HttpGet("sku/{sku}")]
     public async Task<ActionResult<Product>> ViewProductBySKU(string sku)
     {
-      var product = await db.Products.FirstOrDefaultAsync(p => p.SKU == sku);
+      var product = await db.Products.Select(p => p.SKU == sku).ToListAsync();
       if (product == null)
       {
         return NotFound();
       }
       else
       {
-        return product;
+        return Ok(product.ToList());
       }
     }
     //create get to view item by id
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Product>> ViewProductById(int id)
+    [HttpGet("{productId}/{locationId}")]
+    public async Task<ActionResult<Product>> ViewProductById(int productId, int locationId)
     {
-      var product = await db.Products.FirstOrDefaultAsync(p => p.Id == id);
+      var productLocation = db.Products.Where(p => p.LocationId == locationId);
+      var product = await productLocation.FirstOrDefaultAsync(p => p.Id == productId);
       if (product == null)
       {
         return NotFound();
@@ -61,36 +63,48 @@ namespace CriticalHitProducts.Controllers
     [HttpPost]
     public async Task<ActionResult<Product>> AddProduct(Product newProduct)
     {
-      var tracker = new ProductTracker();
       await db.Products.AddAsync(newProduct);
       await db.SaveChangesAsync();
       var locationId = newProduct.LocationId;
       //call method to update list of products
-      tracker.UpdateLocationProducts(locationId, newProduct);
+      //find location
+      var location = await db.Locations.FirstOrDefaultAsync(l => l.Id == locationId);
+      //add new product
+      location.Products.Add(newProduct);
       return Ok(newProduct);
     }
     //replace all properties of existing prod with new props
-    [HttpPut("{id}")]
-    public async Task<ActionResult<Product>> UpdateProduct(int id, Product alteredProduct)
+    [HttpPut("{locationId}/update/{productId}")]
+    public async Task<ActionResult<Product>> UpdateProduct(int locationId, Product alteredProduct, int productId)
     {
-      alteredProduct.Id = id;
+      var originalProduct = await db.Products.FirstOrDefaultAsync(p => p.Id == productId);
+      alteredProduct.Id = productId;
       db.Entry(alteredProduct).State = EntityState.Modified;
       await db.SaveChangesAsync();
+      //find location
+      var location = await db.Locations.FirstOrDefaultAsync(l => l.Id == locationId);
+      //remove original product from list
+      location.Products.Remove(originalProduct);
+      //add updated product to list
+      location.Products.Add(alteredProduct);
       return Ok(alteredProduct);
     }
-    //delete a product by id
-    [HttpDelete("{id}")]
-    public async Task<ActionResult<Product>> DeleteProduct(int id)
+    //delete a product by location and product id
+    [HttpDelete("{productId}/{locationId}")]
+    public async Task<ActionResult<Product>> DeleteProduct(int productId, int locationId)
     {
-      var deleteProduct = await db.Products.FirstOrDefaultAsync(p => p.Id == id);
+      var productLocation = await db.Locations.FirstOrDefaultAsync(l => l.Id == locationId);
+      var deleteProduct = await db.Products.FirstOrDefaultAsync(p => p.Id == productId);
       if (deleteProduct == null)
       {
         return NotFound();
       }
       else
       {
-        db.Products.Remove(deleteProduct);
-        await db.SaveChangesAsync();
+        //find location
+        var location = await db.Locations.FirstOrDefaultAsync(l => l.Id == locationId);
+        //delete product from list
+        location.Products.Remove(deleteProduct);
         return Ok(deleteProduct);
       }
     }
@@ -105,7 +119,21 @@ namespace CriticalHitProducts.Controllers
       }
       else
       {
-        return Ok(pList);
+        return Ok(pList.ToList());
+      }
+    }
+    //create get to view all out of stock items by location
+    [HttpGet("location/stock/{locationId}")]
+    public async Task<ActionResult<Product>> ViewProductsOutOfStockByLocation(int locationId)
+    {
+      var pList = await db.Products.Where(p => p.NumberInStock == 0).Select(l => l.LocationId == locationId).ToListAsync();
+      if (pList == null)
+      {
+        return NotFound();
+      }
+      else
+      {
+        return Ok(pList.ToList());
       }
     }
   }
